@@ -192,7 +192,7 @@ function main() {
     });
 
     // 尻 worker
-    for (i = 0; i < watchDog.length; i++) {
-        worker(ss, watchDog[i])
+    for (n = 0; n < watchDog.length; n++) {
+        worker(ss, watchDog[n])
     };
 }
