@@ -143,10 +143,10 @@ function worker(ss, data) {
             if (statusList.starred.length == 1) {
                 // <a href=\""http://www.example.com/">inline URL</a>
 
-                text += "🎉 有一位新的朋友" + mentionHTML(statusList.starred[0].name, statusList.starred[0].url) + "給ㄌ" + mentionHTML(data.repo, "https://github.com/" + data.repo) + "星星 🌟\n"
+                text += "🎉 有一位新的朋友 " + mentionHTML(statusList.starred[0].name, statusList.starred[0].url) + " 給ㄌ " + mentionHTML(data.repo, "https://github.com/" + data.repo) + " 星星 🌟\n"
             } else {
                 if (statusList.starred.length > 1) {
-                    text += "🎉 有 " + statusList.starred.length + " 位朋友給ㄌ" + mentionHTML(data.repo, "https://github.com/" + data.repo) + "星星 🌟\n"
+                    text += "🎉 有 " + statusList.starred.length + " 位朋友給ㄌ " + mentionHTML(data.repo, "https://github.com/" + data.repo) + " 星星 🌟\n"
                     for (i = 0; i < statusList.starred.length; i++) {
                         text += mentionHTML(statusList.starred[i].name, statusList.starred[i].url)
                         if (i != statusList.starred.length - 1) {
@@ -155,11 +155,14 @@ function worker(ss, data) {
                     }
                 }
             }
+            if (text.length > 1) {
+                text += "\n"
+            }
             if (statusList.unstarred.length == 1) {
-                text += "🤧 有一位朋友" + mentionHTML(statusList.unstarred[0].name, statusList.unstarred[0].url) + "從" + mentionHTML(data.repo, "https://github.com/" + data.repo) + "拿走ㄌ星星 🌠"
+                text += "🤧 有一位朋友 " + mentionHTML(statusList.unstarred[0].name, statusList.unstarred[0].url) + " 從 " + mentionHTML(data.repo, "https://github.com/" + data.repo) + " 拿走ㄌ星星 🌠"
             } else {
                 if (statusList.unstarred.length > 1) {
-                    text += "🤧 有 " + statusList.unstarred.length + " 位朋友從" + mentionHTML(data.repo, "https://github.com/" + data.repo) + "拿走ㄌ星星 🌠\n"
+                    text += "🤧 有 " + statusList.unstarred.length + " 位朋友從 " + mentionHTML(data.repo, "https://github.com/" + data.repo) + " 拿走ㄌ星星 🌠\n"
                     for (i = 0; i < statusList.unstarred.length; i++) {
                         text += mentionHTML(statusList.unstarred[i].name, statusList.unstarred[i].url)
                         if (i != statusList.unstarred.length - 1) {
