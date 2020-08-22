@@ -1,6 +1,6 @@
 // Inital
-SpreadsheetId = "";
-BotToken = "";
+var SpreadsheetId = "";
+var BotToken = "";
 
 // 記錄塞進去
 function insertRecord(ss, reponame, data, cleanup) {
