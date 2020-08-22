@@ -7,9 +7,11 @@
 
 ✅ 不需要額外伺服器
 
-✅ 即時發送通知到 Telegam
+🚀 即時發送通知到 Telegam
 
-✅ 不需額外維護
+👷‍♂️ 不需額外維護
+
+🎳 多個群組、對話通知
 
 ## 使用方式
 
@@ -34,6 +36,8 @@
 ![img](https://p176.p0.n0.cdn.getcloudapp.com/items/GGuRpBgK/CleanShot%202020-08-22%20at%2017.13.24@2x.png)
 
 而下面則是輸入 repo 的完整路徑，可以參考上圖。 `chat_id` 則是 telegram 內的 `chat_id` ，不會查看 `id` 可以參考 [my_id_bot](https://t.me/my_id_bot)。
+
+🚨 另外支援多頻群、對話通知，請使用 `,` 作為間隔。
 
 接著回到 `Google Apps Script` 點擊函示設定為 `main` 並執行，會先進行確認授權行為，請全部允許。
 
