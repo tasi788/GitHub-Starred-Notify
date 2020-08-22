@@ -36,7 +36,7 @@ function getStarsFromRemote(reponame) {
 
     // 四捨五入
     var starredList = [];
-    var totalPages = repo.stargazers_count / 100 + 0.5
+    var totalPages = Math.round(repo.stargazers_count / 100 + 0.5) + 1
     var url = "https://api.github.com/repos/" + reponame + "/stargazers?per_page=100&page=";
     for (i = 1; i < totalPages; i++) {
         var r = UrlFetchApp.fetch(url + i);
