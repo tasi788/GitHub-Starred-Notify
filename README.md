@@ -3,52 +3,50 @@
 ![header](https://p176.p0.n0.cdn.getcloudapp.com/items/mXuyKWlb/CleanShot%202020-08-22%20at%2017.23.25@2x.png)
 
 專給那些喜歡看 repo 星星的捧友。
-他可以做到什麼？
 
-✅ 不需要額外伺服器
+GitHub 星星通知器是一個使用 TypeScript 編寫的實用工具，旨在監控您的 GitHub 倉庫的點星行為。它運行在多元化的 Cloudflare Worker 平台上，並通過 Telegram 通知您誰點了星星，以及誰把星星拿走了。
 
-🚀 即時發送通知到 Telegam
+## 功能
 
-👷‍♂️ 不需額外維護
+- ⚡️ 實時監控您的 GitHub 倉庫的點星行為
+- 🚀 通知直接發送到您的 Telegram
+- 😎 使用 TypeScript 編寫
+- ✅ 運行在 Cloudflare Worker 不需要額外伺服器
+- 👷‍♂️ 不需額外維護
+- 🎳 多個群組、對話通知
 
-🎳 多個群組、對話通知
+## 預備條件
 
-## 使用方式
+- Cloudflare 帳戶
+- Telegram 機器人 token
+- GitHub 個人訪問權限 token
 
-打開 Google Drive 內新增資料夾，新增一個 `Google 試算表` 以及一個 `Google Apps Script` ，在「更多」就能找到 `Google Apps Script`。
+## 設定
 
-![img](https://p176.p0.n0.cdn.getcloudapp.com/items/8LuP5Ney/CleanShot%202020-08-22%20at%2016.44.38@2x.png)
+### 複製倉庫:
+`git clone https://github.com/tasi788/GitHub-Starred-Notify.git`
 
-接著將 `main.gs` 內容貼上到剛剛新建的檔案內，然後回到 `Google 試算表` 將網址複製取其中的 `id`。
+將username和reponame替換為你的 GitHub 用戶名和倉庫名稱。
 
-例如
+### 安裝依賴:
+bash
+yarn install
+# 或者
+npm install
 
-`https://docs.google.com/spreadsheets/d/1Fvhu4wNf_XXXXXXX_vWWWWWWWEbK4lncLZOexxxxxxx/edit#gid=0`
-
-而其中的 `1Fvhu4wNf_XXXXXXX_vWWWWWWWEbK4lncLZOexxxxxxx` 就是 `id` 將其複製貼上到 `Google Apps Script` 內的第二行。
-
-第三行則是 Telegram Bot ，需要先透過 [Botfather](https://t.me/botfather) 申請。
-
-
-
-回到 `Google 試算表` 內，將現有的 `活頁簿` 重新命名為 `data` ，並將第一行命名為喜歡的名稱。
-
-![img](https://p176.p0.n0.cdn.getcloudapp.com/items/GGuRpBgK/CleanShot%202020-08-22%20at%2017.13.24@2x.png)
-
-而下面則是輸入 repo 的完整路徑，可以參考上圖。 `chat_id` 則是 telegram 內的 `chat_id` ，不會查看 `id` 可以參考 [my_id_bot](https://t.me/my_id_bot)。
-
-🚨 另外支援多頻群、對話通知，請使用 `,` 作為間隔。
-
-接著回到 `Google Apps Script` 點擊函示設定為 `main` 並執行，會先進行確認授權行為，請全部允許。
-
-![img](https://p176.p0.n0.cdn.getcloudapp.com/items/DOuxBE0r/CleanShot%202020-08-22%20at%2017.18.28@2x.png)
-
-最後點擊旁邊的時鐘圖示讓他定期確認，這邊建議十分鐘即可，過短可能會有 API Limit 問題。
-
-![img](https://p176.p0.n0.cdn.getcloudapp.com/items/o0u8PLw5/CleanShot%202020-08-22%20at%2017.21.03@2x.png)
+### 設定環境變數:
+在專案的根目錄中創建一個新的.env文件，並添加以下環境變數:
 
 
+TELEGRAM_BOT_TOKEN=您的telegram機器人token
+TELEGRAM_CHAT_ID=你的telegram聊天id
+GH_PERSONAL_ACCESS_TOKEN=您的github個人訪問權限token
 
-## TODO
+將「你的telegram機器人token」、「你的telegram聊天id」和「您的github個人訪問權限token」替換為您實際的資料。  
+## 部署
+將程式碼部署到 Cloudflare Worker，可以參考 Cloudflare 的官方文件。
 
-- [ ] 自動產生 Sheet
+## 警告
+本工具功能用於監控個人或者組織的開源項目，請合理合法使用，尊重他人的隱私。
+
+此文件由 ChatGPT 自動產生
