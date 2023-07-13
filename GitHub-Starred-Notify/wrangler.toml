@@ -1,0 +1,11 @@
+name = "github-starred-notify"
+main = "src/worker.ts"
+compatibility_date = "2023-05-15"
+
+kv_namespaces = [
+    { binding = "KVStarred", id = "80aa300d6ef748dc94f07e44ffa80805", preview_id = "f71b95969e31438cadfecdaa6af8ab56" },
+    { binding = "KVWatch", id = "933634e8bbda407bbd349a88b00b2185", preview_id = "05d1c0fbd0374fc69dcfc983b922fd80" },
+]
+
+# [triggers]
+# crons = ["* * * * *"] # * * * * * = run every minute
