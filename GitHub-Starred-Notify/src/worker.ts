@@ -195,14 +195,16 @@ export default {
 	},
 
 	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise < void > {
-		// read from kv
 		const repolist = await env.KVWatch.list();
+
 		// FutaGuard/LowTechFilter: null
 		for (let i = 0; i < repolist.keys.length; i++) {
 			let reponame: string = repolist.keys[i].name
 			let repoStatus = await getRepoStatus(env.token, reponame)
 			let users: Array < User > = await getStarredUser(env.token, reponame, repoStatus)
-			await proccess(users, reponame, env)
+
+			let chg = await proccess(users, reponame, env)
+			await broadcast(chg, reponame, env)
 		}
 	},
 };
