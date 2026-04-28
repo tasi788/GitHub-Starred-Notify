@@ -1,210 +1,177 @@
 export interface Env {
-	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-	KVWatch: KVNamespace;
-	KVStarred: KVNamespace;
+	DB: D1Database;
 	token: string;
 	bot_token: string;
 }
 
-export interface User {
-	id: string,
-		url: string,
+interface Stargazer {
+	id: string;
+	login: string;
 }
 
-export interface UserList {
-	list: Array < User >
+interface ChangeList {
+	starred: Stargazer[];
+	unstarred: Stargazer[];
 }
 
-async function getRepoStatus(token: string, reponame: string) {
-	let url = 'https://api.github.com/repos/' + reponame
+const GITHUB_HEADERS = (token: string) => ({
+	'Authorization': `Bearer ${token}`,
+	'User-Agent': 'China-Failure-1989-06-04-Tiananmen',
+	'Accept': 'application/vnd.github+json',
+});
 
-	let resp = await fetch(url, {
-		headers: {
-			'Authentication': `Bearer ${token}`,
-			'User-Agent': 'China-Failure-1989-06-04-Tiananmen'
-		}
+async function getRepoStatus(token: string, reponame: string): Promise<{ stargazers_count: number } | null> {
+	const resp = await fetch(`https://api.github.com/repos/${reponame}`, {
+		headers: GITHUB_HEADERS(token),
 	});
-	if (resp.ok === false) {
-		return console.log('Fetch Repo data err.')
+	if (!resp.ok) {
+		console.log(`Fetch repo ${reponame} failed: ${resp.status}`);
+		return null;
 	}
-
-	let repo = JSON.parse(await resp.text())
-	if (typeof repo != 'object') {
-		return console.log('JSON Parse err')
-	}
-	return repo
+	return await resp.json() as { stargazers_count: number };
 }
 
-async function getStarredUser(token: string, reponame: string, repo: any) {
-	let starredList = []
-	var totalPages = Math.ceil(repo.stargazers_count / 100) + 1
-	let url = 'https://api.github.com/repos/' + reponame + '/stargazers?per_page=100&page=';
-	for (let i = 1; i < totalPages; i++) {
-		var r = await fetch(url + i, {
-			headers: {
-				'Authentication': `Bearer ${token}`,
-				'User-Agent': 'China-Failure-1989-06-04-Tiananmen'
-			}
-		});
-		var tmp = JSON.parse(await r.text());
-		for (let x = 0; x < tmp.length; x++) {
-			// id name url | id login url
-			let t = {
-				"id": tmp[x].id.toString(),
-				"url": tmp[x].login
-			}
-			starredList.push(t);
+async function getStargazers(token: string, reponame: string, count: number): Promise<Stargazer[] | null> {
+	const list: Stargazer[] = [];
+	const totalPages = Math.ceil(count / 100);
+	for (let i = 1; i <= totalPages; i++) {
+		const r = await fetch(
+			`https://api.github.com/repos/${reponame}/stargazers?per_page=100&page=${i}`,
+			{ headers: GITHUB_HEADERS(token) }
+		);
+		if (!r.ok) {
+			console.log(`Fetch stargazers ${reponame} page ${i} failed: ${r.status}`);
+			return null;
 		}
-	};
-	return starredList
+		const page = await r.json() as Array<{ id: number; login: string }>;
+		for (const u of page) {
+			list.push({ id: u.id.toString(), login: u.login });
+		}
+	}
+	return list;
 }
 
+async function broadcast(changeList: ChangeList, reponame: string, env: Env) {
+	if (changeList.starred.length === 0 && changeList.unstarred.length === 0) return;
 
-async function broadcast(changeList: {
-	starred: User[],
-	unstarred: User[],
-}, reponame: string, env: Env) {
-	async function mention(name: string) {
-		return `<a href="https://github.com/${name}">${name}</a>`
-	}
-	let url = `https://api.telegram.org/bot${env.bot_token}/sendMessage`
-	// let payload = {}
-	let text = ''
-	if (changeList.starred.length > 0) {
-		if (changeList.starred.length == 1) {
-			text += '🎉 有一位新的朋友 ' + await mention(changeList.starred[0].url) +
-				' 給ㄌ ' + await mention(reponame) + ' 星星 🌟\n'
-		}
-		if (changeList.starred.length > 1) {
-			text += '🎉 有 ' + changeList.starred.length + ' 位朋友給ㄌ ' +
-				await mention(reponame) + ' 星星 🌟\n'
-			for (let i = 0; i < changeList.starred.length; i++) {
-				text += await mention(changeList.starred[i].url)
-				if (i != changeList.starred.length - 1) {
-					text += '、'
-				}
-			}
-		}
+	const mention = (name: string) => `<a href="https://github.com/${name}">${name}</a>`;
+
+	let text = '';
+	if (changeList.starred.length === 1) {
+		text += `🎉 有一位新的朋友 ${mention(changeList.starred[0].login)} 給ㄌ ${mention(reponame)} 星星 🌟\n`;
+	} else if (changeList.starred.length > 1) {
+		text += `🎉 有 ${changeList.starred.length} 位朋友給ㄌ ${mention(reponame)} 星星 🌟\n`;
+		text += changeList.starred.map(u => mention(u.login)).join('、') + '\n';
 	}
 
-	if (changeList.unstarred.length > 0) {
-		if (changeList.unstarred.length == 1) {
-			text += '🤧 有一位朋友 ' + await mention(changeList.unstarred[0].url) +
-				' 從 ' + await mention(reponame) + ' 拿走ㄌ星星 🌠'
-		}
-		if (changeList.unstarred.length > 1) {
-			text += '🤧 有 ' + changeList.unstarred.length +
-				' 位朋友從 ' + await mention(reponame) +
-				' 拿走ㄌ星星 🌠\n'
-			for (let i = 0; i < changeList.unstarred.length; i++) {
-				text += await mention(changeList.unstarred[i].url)
-				if (i != changeList.unstarred.length - 1) {
-					text += '、'
-				}
-			}
-		}
+	if (changeList.unstarred.length === 1) {
+		text += `🤧 有一位朋友 ${mention(changeList.unstarred[0].login)} 從 ${mention(reponame)} 拿走ㄌ星星 🌠`;
+	} else if (changeList.unstarred.length > 1) {
+		text += `🤧 有 ${changeList.unstarred.length} 位朋友從 ${mention(reponame)} 拿走ㄌ星星 🌠\n`;
+		text += changeList.unstarred.map(u => mention(u.login)).join('、');
 	}
-	let _ = await env.KVWatch.get(reponame)
-	let repo = JSON.parse(_!)
-	let data: {
-		text: string,
-		chat_id: string,
-		parse_mode: string
-	} = {
-		text: text,
-		chat_id: '',
-		parse_mode: 'html'
-	}
-	for (let i = 0; i < repo.length; i++) {
-		data.chat_id = repo[i]
-		let init = {
-			body: JSON.stringify(data),
+
+	const { results: chats } = await env.DB.prepare(
+		'SELECT chat_id FROM watches WHERE repo = ?'
+	).bind(reponame).all<{ chat_id: string }>();
+
+	const url = `https://api.telegram.org/bot${env.bot_token}/sendMessage`;
+	for (const row of chats) {
+		await fetch(url, {
 			method: 'POST',
-			headers: {
-				'content-type': 'application/json;charset=UTF-8',
-			},
-
-		}
-		let result = await fetch(url, init)
+			headers: { 'content-type': 'application/json;charset=UTF-8' },
+			body: JSON.stringify({
+				chat_id: row.chat_id,
+				text,
+				parse_mode: 'html',
+			}),
+		});
 	}
-
-	// post
-	// payload
-
 }
 
-async function proccess(userlist: Array < User > , reponame: string, env: Env) {
-	let starredList = await env.KVStarred.get(reponame);
-	let cachedKeyList: Array < User > = JSON.parse(starredList!)
-	let changeList: {
-		starred: User[],
-		unstarred: User[],
-	} = {
-		"starred": [],
-		"unstarred": [],
+async function executeBatch(db: D1Database, stmts: D1PreparedStatement[]) {
+	const CHUNK = 50;
+	for (let i = 0; i < stmts.length; i += CHUNK) {
+		await db.batch(stmts.slice(i, i + CHUNK));
 	}
-	if (starredList == null) {
-		await env.KVStarred.put(reponame, JSON.stringify(userlist))
+}
+
+async function processRepo(reponame: string, env: Env): Promise<ChangeList> {
+	const empty: ChangeList = { starred: [], unstarred: [] };
+
+	const repoStatus = await getRepoStatus(env.token, reponame);
+	if (!repoStatus) return empty;
+
+	const current = await getStargazers(env.token, reponame, repoStatus.stargazers_count);
+	if (current === null) return empty;
+
+	const { results: cachedRows } = await env.DB.prepare(
+		'SELECT user_id, login FROM stargazers WHERE repo = ?'
+	).bind(reponame).all<{ user_id: string; login: string }>();
+
+	const cachedMap = new Map(cachedRows.map(r => [r.user_id, r.login]));
+	const currentMap = new Map(current.map(u => [u.id, u.login]));
+
+	const starred: Stargazer[] = [];
+	const unstarred: Stargazer[] = [];
+
+	for (const u of current) {
+		if (!cachedMap.has(u.id)) starred.push(u);
+	}
+	for (const [id, login] of cachedMap) {
+		if (!currentMap.has(id)) unstarred.push({ id, login });
 	}
 
-	// looping fetch latest list
-	if (starredList != null) {
-		for (let i = 1; i < userlist.length; i++) {
-			// new user starred
-			if (typeof cachedKeyList.find(obj => obj.id == userlist[i].id) != 'object') {
-				changeList.starred.push(userlist[i])
-				await env.KVStarred.put(reponame, JSON.stringify(userlist))
-			}
+	// First seed: cache empty + GitHub returned users → just insert without notifying.
+	const isFirstSeed = cachedRows.length === 0 && current.length > 0;
 
+	const stmts: D1PreparedStatement[] = [];
+	if (isFirstSeed) {
+		for (const u of current) {
+			stmts.push(env.DB.prepare(
+				'INSERT INTO stargazers (repo, user_id, login) VALUES (?, ?, ?)'
+			).bind(reponame, u.id, u.login));
 		}
-
-		for (let i = 0; i < cachedKeyList.length && starredList != null; i++) {
-			if (typeof userlist.find(obj => obj.id == cachedKeyList[i].id) == 'undefined') {
-				changeList.unstarred.push(cachedKeyList[i])
-				await env.KVStarred.put(reponame, JSON.stringify(userlist))
-			}
+	} else {
+		for (const u of starred) {
+			stmts.push(env.DB.prepare(
+				'INSERT OR REPLACE INTO stargazers (repo, user_id, login) VALUES (?, ?, ?)'
+			).bind(reponame, u.id, u.login));
+		}
+		for (const u of unstarred) {
+			stmts.push(env.DB.prepare(
+				'DELETE FROM stargazers WHERE repo = ? AND user_id = ?'
+			).bind(reponame, u.id));
 		}
 	}
-	return changeList
+
+	if (stmts.length > 0) {
+		await executeBatch(env.DB, stmts);
+	}
+
+	return isFirstSeed ? empty : { starred, unstarred };
+}
+
+async function runAll(env: Env) {
+	const { results } = await env.DB.prepare(
+		'SELECT DISTINCT repo FROM watches'
+	).all<{ repo: string }>();
+
+	for (const row of results) {
+		const chg = await processRepo(row.repo, env);
+		await broadcast(chg, row.repo, env);
+	}
 }
 
 export default {
-	// The scheduled handler is invoked at the interval set in our wrangler.toml's
-	// [[triggers]] configuration.
-	async fetch(request: Request, env: Env) {
-		const repolist = await env.KVWatch.list();
-
-		// FutaGuard/LowTechFilter: null
-		for (let i = 0; i < repolist.keys.length; i++) {
-			let reponame: string = repolist.keys[i].name
-			let repoStatus = await getRepoStatus(env.token, reponame)
-			let users: Array < User > = await getStarredUser(env.token, reponame, repoStatus)
-			// let b = {id: '123'}
-
-			let chg = await proccess(users, reponame, env)
-			await broadcast(chg, reponame, env)
-			const json = JSON.stringify(chg, null, 2);
-			return new Response(json, {
-				headers: {
-					"content-type": "application/json;charset=UTF-8",
-				},
-			});
-
-		}
-
+	async fetch(_request: Request, env: Env) {
+		await runAll(env);
+		return new Response('ok\n', {
+			headers: { 'content-type': 'text/plain;charset=UTF-8' },
+		});
 	},
 
-	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise < void > {
-		const repolist = await env.KVWatch.list();
-
-		// FutaGuard/LowTechFilter: null
-		for (let i = 0; i < repolist.keys.length; i++) {
-			let reponame: string = repolist.keys[i].name
-			let repoStatus = await getRepoStatus(env.token, reponame)
-			let users: Array < User > = await getStarredUser(env.token, reponame, repoStatus)
-
-			let chg = await proccess(users, reponame, env)
-			await broadcast(chg, reponame, env)
-		}
+	async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+		ctx.waitUntil(runAll(env));
 	},
 };
